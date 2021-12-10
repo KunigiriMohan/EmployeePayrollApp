@@ -49,59 +49,14 @@ window.addEventListener('DOMContentLoaded',(event)=>{
 /**save() method to save data */
 const save = () =>{                                                 //save function to save the details
     try{
-        let employeePayrollData=createEmployeePayroll();
-        createAndUpdateStorage(employeePayrollData);
+        setEmployeePayrollObject();
+        createAndUpdateStorage();
+        resetForm();
+        window.location.replace(site_properties.home_page);
     }
     catch (e){
         return;
     }
-}
-/**CreateAndUpdateStorage() method to save it to local storage  */
-function createAndUpdateStorage(employeePayrollData){
-        
-    let employeePayrollList = JSON.parse(localStorage.getItem("EmployeePayrollList"));
-
-    if(employeePayrollList != undefined){
-        employeePayrollList.push(employeePayrollData);
-    }
-    else{
-        employeePayrollList = [employeePayrollData]
-    }
-    alert(employeePayrollList.toString());
-    localStorage.setItem("EmployeePayrollList",JSON.stringify(employeePayrollList))
-}
-
-
-const createEmployeePayroll= () =>{                                         //inserting try catch block to catch error trown when name is entered wrong
-    let employeePayrollData = new EmployeePayrollData();
-    try{
-        employeePayrollData.name = getInputValueById('#name');
-    }
-    catch (e){
-        setTextValue('.text-error',e);
-        throw e;
-    }
-    employeePayrollData.id=getInputValueById('#name');                                                                                       //taking all user input values and setting latest values for name,gender.
-    employeePayrollData.profilePic=getSelectedValues('[name=profile]').pop();
-    employeePayrollData.gender=getSelectedValues('[name=gender]').pop();
-    employeePayrollData.department=getSelectedValues('[name=department]');
-    employeePayrollData.salary=getInputValueById("#salary");
-    employeePayrollData.notes=getInputValueById("#notes")
-    
-    let date=getInputValueById('#year')+getInputValueById('#month')+" "+getInputValueById('#day');
-
-    employeePayrollData.startDate= new Date(Date.parse(date));
-    alert(employeePayrollData.toString());
-    return employeePayrollData;
-}
-/* getSelectedValues() method to push all the values entered by user to array of setItems*/
-const getSelectedValues = (propertyValue) => {
-    let allItems =document.querySelectorAll(propertyValue);
-    let setItems = [];
-    allItems.forEach(item => {
-        if(item.checked) setItems.push(item.value);
-    });
-    return setItems;
 }
 /**getInputValueById() method to verify values. and modify date in require format]
  * 
@@ -129,14 +84,14 @@ const resetForm = ()=>{
     setValue('#month','January');
     setValue('#year','2020');
 }
-
+/**Unselectedvalues() function is to empty the all the values in the form after entering the details */
 const unsetSelectedValues = (propertyValue) => {
     let allItems = document.querySelectorAll(propertyValue);
     allItems.forEach(item => {
         item.checked = false;
     });
 }
-
+/**setTextValue() function to show the error when we entered the wrong value */
 const setTextValue = (id,value) => {
     const element =document.querySelector(id);
     element.textContent = value;
@@ -147,7 +102,7 @@ const setValue = (id, value) =>{
     const element = document.querySelector(id);
     element.value = value;
 }
-
+/**checkForUpdate() function to after clicking edit option to fill the form with previous employee details */
 const checkForUpdate = () => {
     const employeePayrollJson = localStorage.getItem('editEmp');
     isUpdate = employeePayrollJson ? true : false;
@@ -156,6 +111,7 @@ const checkForUpdate = () => {
     setForm();
 }
 
+/**setForm() method to  set the form to previous details after clicking edit button in home page*/
 const setForm = () => {
     setValue('#name', employeePayrollObj._name);
     setSelectedValues('[names=profile]', employeePayrollObj._profilePic);
@@ -169,7 +125,7 @@ const setForm = () => {
     setValue('#month',date[1]);
     setValue('#year',date[2]);
 }
-
+/** setSelectedValues() function to set selected values in given range  in employee details*/
 const setSelectedValues = (propertyValue,value) => {
     let allItems = document.querySelectorAll(propertyValue);
     allItems.forEach(item =>{
@@ -181,4 +137,82 @@ const setSelectedValues = (propertyValue,value) => {
         else if (item.value === value )
         item.checked = value;
 });
+}
+/**setEmployeePayrollObject() function to create object of employee details */
+const setEmployeePayrollObject = () => {
+    employeePayrollObj._name = getInputValueById('#name');
+    employeePayrollObj._profilePic = getSelectedValues('[name=profile]').pop();
+    employeePayrollObj._gender = getSelectedValues('[name=gender]').pop();
+    employeePayrollObj._department = getSelectedValues('[name=department]');
+    employeePayrollObj._salary = getInputValueById('#salary');
+    employeePayrollObj._notes = getInputValueById('#notes');
+
+    let date = getInputValueById('#day')+" "+getInputValueById('#month')+" "+getInputValueById('#year');
+    employeePayrollObj._startDate =date;
+}
+
+/** createAndUpdateStorage() method to add employeedetail object to  local storage*/
+const createAndUpdateStorage = () => {
+    let employeePayrollList = JSON.parse(localStorage.getItem("EmployeePayrollList"));
+    if(employeePayrollList){
+        let employeePayrollData = employeePayrollList.find(empData => empData._id == employeePayrollObj._id);
+        if (!employeePayrollData){
+            employeePayrollList.push(createEmployeePayrollData());
+        }
+        else {
+            const index = employeePayrollList.map(empData => empData).indexOf(employeePayrollData._id);
+            employeePayrollList.splice(index,1,createEmployeePayrollData(employeePayrollData._id));
+        }
+    }
+    else {
+        employeePayrollList = [createEmployeePayrollData()]
+    }
+    localStorage.setItem("EmployeePayrollList",JSON.stringify(employeePayrollList))
+}
+
+/** createEmployeePayrollData() metjhod to create employee detail object*/
+const createEmployeePayrollData = (id) => {
+    if (!id) employeePayrollObj._id = createNewEmployeeId();
+    else employeePayrollObj._id = id;
+    setEmployeePayrollData(employeePayrollObj);
+    return employeePayrollObj;
+}
+
+/** setEmployeePayrollData() function to set employee details specific variable  */
+const setEmployeePayrollData = (employeePayrollData) => {
+    try{
+        employeePayrollData.name = employeePayrollObj._name;
+    }catch(e){
+        setTextValue('.text-error',e);
+        throw e;
+    }
+    employeePayrollData.profilePic = employeePayrollObj._profilePic;
+    employeePayrollData.gender = employeePayrollObj._gender;
+    employeePayrollData.department = employeePayrollObj._department;
+    employeePayrollData.salary = employeePayrollObj._salary;
+    employeePayrollData.notes = employeePayrollObj._notes;
+    try{
+        employeePayrollData.startDate = new Date(Date.parse(employeePayrollObj._startDate));
+    }catch (e){
+        setTextValue('.date-error',e);
+        throw e;
+    }
+    alert(employeePayrollObj.toString());
+}
+/**createNewEmployeeId() function to create new employeeid for every employee
+ */
+const createNewEmployeeId = () => {
+    let empID =localStorage.getItem("EmployeeID");
+    empID =!empID ? 1 : (parseInt(empID)+1).toString();
+    localStorage.setItem("EmployeeID",empID);
+    return empID;
+}
+
+const getSelectedValues = (propertyValue) => {
+    let allItems = document.querySelectorAll(propertyValue);
+    let selItems = [];
+    allItems.forEach(item => {
+        if (item.checked) selItems.push(item.value);
+    });
+    return selItems;
 }
